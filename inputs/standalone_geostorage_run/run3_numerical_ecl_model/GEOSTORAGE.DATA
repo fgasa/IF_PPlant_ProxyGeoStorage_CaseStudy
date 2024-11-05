@@ -1,0 +1,83 @@
+SKIP
+date: 2022-04-06
+author: fgasanzade
+caes surface_density: 1.2045751824931505 kg/m3
+ENDSKIP
+
+LOAD
+'include/SYNTH_RADIAL_CAES_IF_BASE' /
+
+--===================================
+SOLUTION
+--===================================
+RESTART
+'include/SYNTH_RADIAL_CAES_IF_BASE' 	1 /
+
+RPTRST
+BASIC=2 PRES/
+
+--===================================
+SUMMARY
+--===================================
+DATE
+EXCEL
+RUNSUM
+
+WBHP
+/
+WGIR
+/
+WGPR
+/
+WWPR
+/
+RGIP
+/
+WGIT
+/
+
+--===================================
+SCHEDULE
+--===================================
+
+MESSAGES
+ 2* 100000000 10000000 4* 100000000 100000000 2* /
+ 
+RPTRST
+BASIC=2 /
+
+
+WELSPECS
+--  well name    well group   I-Location    J-Location    reference depth for BHP   Preferred Phase     drainage radius for injectivity
+  WELL_1		GR1		35		35		1*		'GAS' /
+  WELL_2		GR1		50		25		1*		'GAS' /
+  WELL_3		GR1		70		35		1*		'GAS' /
+--
+  WELL_4		GR1		25		50		1*		'GAS' /
+  WELL_C		GR1		50		50		1*		'GAS' /
+  WELL_6		GR1		75		50		1*		'GAS' /
+--
+  WELL_7		GR1		35		65		1*		'GAS' /
+  WELL_8		GR1		50		75		1*		'GAS' /
+  WELL_5		GR1		70		65		1*		'GAS' /
+/
+
+COMPDAT      
+--  well name I-Location J-Location upperK  lower K   Open flag   Saturation table number     Transmissibility factor  Wellbore diameter 
+  WELL_1		35		35		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_2		50		25		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_3		70		35		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+--     		
+  WELL_4		25		50		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_C		50		50		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_6		75		50		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+--      	
+  WELL_7		35		65		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_8		50		75		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+  WELL_5		70		65		1		10		'OPEN'		2*		0.25		3*		'Z'	/
+/
+INCLUDE
+  'include/WELL_SCHEDULE_2050NB.INC'  /
+--  'include/WELL_SCHEDULE_2050REF.INC'  /
+
+END
