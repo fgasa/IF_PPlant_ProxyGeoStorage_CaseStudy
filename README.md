@@ -2,6 +2,7 @@
 
 Case study applying coupled models (TESPy power plant and geostorage using semi-analytical gas storage model) for scenario simulation with shares of renewables up to 100%. The aim behind this case study is to demonstrate the new storage model in the [coupled interface tool](https://github.com/fgasa/IF_PPlant_GeoStorage) for dimensioning geological energy storage in renewable energy systems.
 
+ <p align="center"> <img src="fig_graphical_abstract.svg" width="500"></p>
 
 ## Usage
 
@@ -17,7 +18,9 @@ The semi-analytical simulator syntax is relatively simple. For more detailed inf
 
 Standalone simulation for the numerical model is also available in the same directory. For scenario simulation, well schedule files are used, which are derived from coupled simulations.
 
-![scenario run using numerical storage model](fig_scenario2_numerical_model.gif)
+
+<p align="center"> <img src="fig_scenario2_numerical_model.gif" width="400"></p>
+
 
 ## Inputs for case study
 
