@@ -2,9 +2,16 @@ import os
 import pandas as pd
 import numpy as np
 from tabulate import tabulate
+import CoolProp.CoolProp as CP
 
 WH2GWH = 1e-9
+W2MW = 1e-6
 SEC2HOUR = 3600
+STD_TEMPERATURE = 293.15
+STD_PRESSURE = 101325
+CP_VERSION = f"-- CoolProp version: {CP.get_global_param_string('version')}\n"
+REFERENCE_CONDITION = f"-- Standard temperature: {STD_TEMPERATURE} K, Standard pressure: {STD_PRESSURE} Pa\n"
+
 
 def read_coupled_sim_rst(file_path):
     '''reads a CSV file from coupled simulation and performs some preprocessing '''
@@ -56,7 +63,7 @@ def print_coupled_sim_rst(file_path, power_load_max, power_unload_max):
     total_mass_output = round(df['massflow_output'].cumsum().iloc[-1] * SEC2HOUR / 1e9, 3)
     volume_missmatch = round(df['massflow_output'].cumsum().iloc[-1] * SEC2HOUR / 1e9 +
                               df['massflow_input'].cumsum().iloc[-1] * SEC2HOUR / 1e9, 3)
-    total_mass_min = round(df['total_mass'].cumsum().min() * 3600 / 1e9, 3)
+    total_mass_min = round(df['total_mass'].cumsum().min() * SEC2HOUR / 1e9, 3)
     mass_flow_rate_max_discharge = round(df.loc[df['power_actual'] == power_load_max, 'massflow_actual'].max(), 1)
     mass_flow_rate_max_charge = round(df.loc[df['power_actual'] == power_unload_max, 'massflow_actual'].max(), 1)
     storage_pressure_end = round(df['storage_pressure'].iloc[-1], 3)
@@ -129,7 +136,10 @@ def get_storage_efficiency(cycle_rst_path, plant_type):
 
     return df
 
-def get_proxy_model_domain_results(lines, time):
+def get_proxy_model_domain_results(file_path, time):
+    with open(file_path,'r') as file:
+        lines = file.readlines()
+        
     x_values = []
     y_values = []
     pressure_values = []
@@ -176,3 +186,47 @@ def get_proxy_model_well_result(file_path):
     df = pd.read_csv(file_path,sep='\t',header=[0,1])
     df.columns = df.columns.map(lambda h: '{}_{}'.format(h[0], h[1]))
     return df
+
+def write_fluid_pvtx(temperature, pressure, fluid, output_dir):
+    ''' write fluid PVT data: Pressure must be in bar and Temperature in Celsius'''
+    pressure = np.arange(pressure * 0.1, pressure * 3, 2) * 1e5  # in Pa for CP
+    temperature = np.full_like(pressure, temperature + 273.15)  # in K
+
+    # calculate fluid density and viscosity in cP
+    fluid_density = CP.PropsSI('D', 'P', pressure, 'T', temperature, fluid)
+    fluid_viscosity = CP.PropsSI('V', 'P', pressure, 'T', temperature, fluid) * 1e3
+
+    data = np.column_stack((pressure / 1e5, temperature - 273.15, fluid_density, fluid_viscosity))
+
+    header1 = ['# GAS_IDENT', fluid.strip(), '$ENTRIES', str(len(data)), '1\n']
+    header2 = ['-- Pressure[bar] Temperature[°C] Density[kg/m³] Viscosity[cP or mPa*s]\n$DATA']
+    header = '\n'.join(header1) + '\n'.join(header2)
+
+    # write data to file
+    filename = f'geostorage_{fluid}_CP.ptdv'
+    output_path = os.path.join(output_dir, filename).upper()
+    np.savetxt(output_path, data, delimiter='\t', header=header, fmt='%.4e', comments='', footer='#STOP')
+
+    print(f' Msg: Fluid PVT is generated')
+    return data
+
+def resample_data_for_heatmap(temp_series):
+    temp_np = temp_series.to_numpy()
+
+    # define new data resolution
+    num_hours = 24
+    num_days = len(temp_np) // num_hours
+
+    # Check that the data is long enough to reshape into a heatmap
+    if len(temp_np) < num_days * num_hours:
+        raise ValueError("Input data is too short to reshape into a heatmap")
+    data_reshaped = temp_np[:num_days * num_hours]
+    temp_heatmap = data_reshaped.reshape((num_days, num_hours))
+
+    return temp_heatmap
+
+def reshape_pressure_array(pressure_values, n):
+        pressure_array = pressure_values.reshape(n, n)
+        pressure_array = np.ma.masked_where(pressure_array < 0, pressure_array)
+        
+        return pressure_array
